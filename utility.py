@@ -2,6 +2,12 @@ def no_lost_lives():
     return '+---+\n|   |\n|\n|\n|\n|\n'
 
 
+def print_word(w):
+    for c in w:
+        print(c, end=' ')
+    print()
+
+
 def new_letter_guessed(movie, letter, old_w):
     w = list(old_w)
     str = ''
@@ -48,7 +54,3 @@ def five_lost_lives():
 
 def six_lost_lives():
     return '+---+\n|   |\n|   O\n|  /|\\\n|  / \\\n|\n'
-
-
-def seven_lost_lives():
-    return '+---+\n|   |\n|   O\n|  /|\\\n|  / \\\n|    |\n'
