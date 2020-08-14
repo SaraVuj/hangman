@@ -8,6 +8,16 @@ def print_word(w):
     print()
 
 
+def get_word_at_start(movie):
+    w = ''
+    for c in movie:
+        if c.isalpha():
+            w += '_'
+        else:
+            w += c
+    return w
+
+
 def new_letter_guessed(movie, letter, old_w):
     w = list(old_w)
     str = ''
@@ -18,6 +28,21 @@ def new_letter_guessed(movie, letter, old_w):
         pos += 1
 
     return str.join(w)
+
+
+def get_missed_letters(missed_letters):
+    s = ''
+    if not len(missed_letters):
+        s = 'Your missed letters will be shown here'
+    else:
+        s = 'Your missed letters: '
+        for letter in missed_letters:
+            if missed_letters[len(missed_letters) - 1] == letter:
+                s += letter + '\n'
+            else:
+                s += letter + ', '
+
+    return s
 
 
 def print_missed_letters(missed_letters):
