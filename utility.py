@@ -33,9 +33,9 @@ def new_letter_guessed(movie, letter, old_w):
 def get_missed_letters(missed_letters):
     s = ''
     if not len(missed_letters):
-        s = 'Your missed letters will be shown here'
+        s = 'Missed letters will be shown here'
     else:
-        s = 'Your missed letters: '
+        s = 'Missed letters: '
         for letter in missed_letters:
             if missed_letters[len(missed_letters) - 1] == letter:
                 s += letter + '\n'

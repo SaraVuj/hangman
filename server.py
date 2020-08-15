@@ -1,5 +1,8 @@
-import socket, threading
-from config import HOST, PORT, END
+import random
+import socket
+import threading
+
+from config import HOST, PORT, END, WAIT_MESSAGE, BLOCK, UNBLOCK
 from utility import *
 
 NUM_OF_PLAYERS = 2
@@ -13,41 +16,67 @@ missed_letters = []
 hangman = no_lost_lives()
 w = ''
 missed_letters_str = ''
+msg = ' '
+GAME_OVER = False
+current_player = None
 
 
 def accept_client(movie):
-    while True:
+    global msg, w, missed_letters_str, missed_letters, hangman
+    while not GAME_OVER:
         cli_sock, cli_add = ser_sock.accept()
-        if len(CONNECTION_LIST) < 2:
+        if len(CONNECTION_LIST) < NUM_OF_PLAYERS:
             CONNECTION_LIST.append(cli_sock)
-            print('New player')
+
             thread_client = threading.Thread(target=broadcast, args=[cli_sock, movie])
             thread_client.start()
         else:
-            print('Two players already playing')
             cli_sock.send(END.encode())
             cli_sock.close()
 
 
 def broadcast(cli_sock, movie):
-    global w
-    global missed_letters
-    global hangman
-    global lives
-    global missed_letters_str
-    msg = ''
+    global msg, w, missed_letters, hangman, lives, missed_letters_str
+    global GAME_OVER, current_player
+    sent = False
+    start_game = True
     while True:
+        if len(CONNECTION_LIST) != NUM_OF_PLAYERS and not sent:
+            cli_sock.send(WAIT_MESSAGE.encode())
+            sent = True
+            continue
+        elif len(CONNECTION_LIST) != NUM_OF_PLAYERS:
+            continue
+        elif start_game and len(CONNECTION_LIST) == NUM_OF_PLAYERS and CONNECTION_LIST[NUM_OF_PLAYERS - 1] == cli_sock:
+            missed_letters_str = get_missed_letters(missed_letters)
+            if msg == ' ':
+                msg = missed_letters_str + '#' + hangman + '#' + w
+
+            current_player = random.choice(CONNECTION_LIST)
+            unblocking_msg = msg + UNBLOCK
+            current_player.send(unblocking_msg.encode())
+
+            blocking_msg = msg + BLOCK
+            send_except_current(current_player, blocking_msg)
+            start_game = False
+
         try:
             data = cli_sock.recv(1024)
             letter = data.decode()
-            if letter in movie or letter.upper() in movie or letter.lower() in movie:
-                w = new_letter_guessed(movie, letter, w) + '\n'
 
+            if letter in movie or letter.upper() in movie or letter.lower() in movie:
+                w = new_letter_guessed(movie, letter, w)
+                current_player = cli_sock
                 if '_' not in w:
                     msg = 'You guessed the movie'
-                    send(msg)
+                    cli_sock.send(msg.encode())
+                    send_except_current(cli_sock, 'You lost. The movie was ' + movie)
+                    GAME_OVER = True
+                    break
             else:
                 if letter not in missed_letters:
+                    current_player = get_other_player(cli_sock)
+
                     missed_letters.append(letter)
                     lives -= 1
 
@@ -64,15 +93,19 @@ def broadcast(cli_sock, movie):
                     else:
                         hangman = six_lost_lives()
 
+            missed_letters_str = get_missed_letters(missed_letters)
             if lives == 0:
-                msg = 'You lost. The movie was ' + movie
+                msg = missed_letters_str + '#' + hangman + '#' + w + '#You lost. The movie was ' + movie
                 send(msg)
+                GAME_OVER = True
                 break
 
-            missed_letters_str = get_missed_letters(missed_letters)
-            msg += missed_letters_str + '#' + hangman + '#' + w
-            send(msg)
+            msg = missed_letters_str + '#' + hangman + '#' + w
+            unblocking_msg = msg + UNBLOCK
+            current_player.send(unblocking_msg.encode())
 
+            blocking_msg = msg + BLOCK
+            send_except_current(current_player, blocking_msg)
         except Exception as e:
             print(e)
             break
@@ -80,8 +113,19 @@ def broadcast(cli_sock, movie):
 
 def send(msg):
     for client in CONNECTION_LIST:
-        print(client)
         client.send(msg.encode())
+
+
+def send_except_current(current, msg):
+    for client in CONNECTION_LIST:
+        if client != current:
+            client.send(msg.encode())
+
+
+def get_other_player(current):
+    for client in CONNECTION_LIST:
+        if client != current:
+            return client
 
 
 def run_server(movie):
