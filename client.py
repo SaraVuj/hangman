@@ -1,6 +1,6 @@
-import socket, threading
+import socket, threading, sys
 from config import HOST, PORT, END, WAIT_MESSAGE, BLOCK, UNBLOCK
-import sys
+from utility import print_word
 
 
 def receive():
@@ -37,17 +37,15 @@ def receive():
             print()
             print(str[0])
             print(str[1])
-            print(str2)
+            print_word(str2)
             print(note)
 
             if not blocked:
                 letter = input('Type a letter:')
-                if not len(letter) == 1 or not letter.isalpha():
+                while not len(letter) == 1 or not letter.isalpha():
                     print('A single letter was expected')
-                else:
-                    cli_sock.send(letter.encode())
-
-
+                    letter = input('Type a letter:')
+                cli_sock.send(letter.encode())
 
     sys.exit()
 
