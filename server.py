@@ -68,16 +68,16 @@ def broadcast(cli_sock, movie):
                 w = new_letter_guessed(movie, letter, w)
                 current_player = cli_sock
                 if '_' not in w:
-                    msg = 'You guessed the movie'
+                    msg = missed_letters_str + '#' + hangman + '#' + w + '#You guessed the movie'
                     cli_sock.send(msg.encode())
                     send_except_current(cli_sock, 'You lost. The movie was ' + movie)
                     GAME_OVER = True
                     break
             else:
-                if letter not in missed_letters:
+                if letter.lower() not in missed_letters:
                     current_player = get_other_player(cli_sock)
 
-                    missed_letters.append(letter)
+                    missed_letters.append(letter.lower())
                     lives -= 1
 
                     if lives == 5:
